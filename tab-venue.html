@@ -1,0 +1,612 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>场地库 - Venue Library</title>
+<style>
+  /* ========== 设计体系变量 ========== */
+  :root {
+    --bg: #0a0a0b;
+    --surface: rgba(255,255,255,0.04);
+    --surface-hover: rgba(255,255,255,0.08);
+    --border: rgba(255,255,255,0.08);
+    --border-strong: rgba(255,255,255,0.15);
+    --fg: #f0f0f0;
+    --fg-muted: rgba(255,255,255,0.5);
+    --fg-subtle: rgba(255,255,255,0.3);
+    --accent: #d4840a;
+    --accent-hover: #e6991a;
+    --accent-glow: rgba(212,132,10,0.2);
+    --danger: #ef4444;
+    --success: #22c55e;
+    --warning: #eab308;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --transition: 0.25s cubic-bezier(0.25, 0.1, 0.25, 1);
+  }
+
+  /* ========== 基础重置 ========== */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    padding: 32px;
+    background:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(212,132,10,0.06) 0%, transparent 60%),
+      var(--bg);
+  }
+
+  /* ========== 页面顶部标题栏 ========== */
+  .page-header {
+    max-width: 1400px;
+    margin: 0 auto 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .page-header-left {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+  }
+
+  .page-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--fg);
+    letter-spacing: -0.02em;
+  }
+
+  .page-count {
+    font-size: 13px;
+    color: var(--fg-muted);
+    font-weight: 400;
+  }
+
+  .btn-add-header {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 999px;
+    padding: 10px 24px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: inherit;
+  }
+
+  .btn-add-header:hover {
+    background: var(--accent-hover);
+    box-shadow: 0 4px 20px var(--accent-glow);
+    transform: translateY(-1px);
+  }
+
+  .btn-add-header:active { transform: translateY(0); }
+  .btn-add-header svg { flex-shrink: 0; }
+
+  /* ========== 主布局：左表单 + 右网格 ========== */
+  .app {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 24px;
+    max-width: 1400px;
+    margin: 0 auto;
+    height: calc(100vh - 120px);
+  }
+
+  /* ========== 通用卡片 ========== */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: border-color var(--transition), box-shadow var(--transition);
+  }
+
+  .card:hover { border-color: var(--border-strong); }
+
+  /* ========== 左侧表单面板 ========== */
+  .form-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .form-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .form-header h2 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--fg);
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  .form-badge {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--accent);
+    background: var(--accent-glow);
+    border-radius: 999px;
+    padding: 4px 12px;
+  }
+
+  .form-body {
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .form-body::-webkit-scrollbar { width: 4px; }
+  .form-body::-webkit-scrollbar-track { background: transparent; }
+  .form-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  /* ========== 表单字段 ========== */
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .field label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--fg-muted);
+  }
+
+  .field input,
+  .field textarea {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    color: var(--fg);
+    font-size: 14px;
+    font-family: inherit;
+    transition: border-color var(--transition), box-shadow var(--transition);
+    outline: none;
+    width: 100%;
+  }
+
+  .field input::placeholder,
+  .field textarea::placeholder { color: var(--fg-subtle); }
+
+  .field input:focus,
+  .field textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+
+  .field textarea { resize: vertical; min-height: 72px; line-height: 1.5; }
+
+  /* ========== 主按钮（表单内） ========== */
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 999px;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-family: inherit;
+    margin-top: 4px;
+  }
+
+  .btn-primary:hover {
+    background: var(--accent-hover);
+    box-shadow: 0 4px 20px var(--accent-glow);
+    transform: translateY(-1px);
+  }
+
+  .btn-primary:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px var(--accent-glow);
+  }
+
+  /* ========== 右侧场地列表 ========== */
+  .list-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .venue-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 24px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+    align-content: start;
+  }
+
+  .venue-list::-webkit-scrollbar { width: 5px; }
+  .venue-list::-webkit-scrollbar-track { background: transparent; }
+  .venue-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 5px; }
+
+  /* ========== 场地卡片 ========== */
+  .venue-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    transition: all var(--transition);
+    position: relative;
+    overflow: hidden;
+    animation: fadeInUp 0.35s ease-out;
+  }
+
+  .venue-card:hover {
+    border-color: var(--border-strong);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+  }
+
+  .venue-card:hover .venue-delete { opacity: 1; }
+
+  /* 顶部装饰渐变条 */
+  .venue-card-bar {
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), #e6991a, var(--accent));
+    flex-shrink: 0;
+  }
+
+  .venue-card-body {
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex: 1;
+  }
+
+  .venue-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .venue-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--fg);
+    line-height: 1.3;
+  }
+
+  .venue-delete {
+    width: 28px;
+    height: 28px;
+    background: rgba(239,68,68,0.1);
+    border: 1px solid rgba(239,68,68,0.2);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--danger);
+    font-size: 12px;
+    cursor: pointer;
+    opacity: 0;
+    transition: all var(--transition);
+    flex-shrink: 0;
+  }
+
+  .venue-delete:hover { background: rgba(239,68,68,0.2); }
+
+  /* 风格标签 */
+  .venue-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .venue-tag {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--accent);
+    background: var(--accent-glow);
+    padding: 4px 12px;
+    border-radius: 999px;
+  }
+
+  /* 详情行 */
+  .venue-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .venue-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--fg-muted);
+    line-height: 1.4;
+  }
+
+  .venue-row .icon { flex-shrink: 0; font-size: 12px; opacity: 0.6; width: 16px; text-align: center; }
+  .venue-row span { color: var(--fg-muted); }
+
+  /* 底部操作栏 */
+  .venue-footer {
+    display: flex;
+    gap: 8px;
+    padding: 14px 20px;
+    border-top: 1px solid var(--border);
+  }
+
+  .btn-quote {
+    flex: 1;
+    background: transparent;
+    border: 1px solid var(--border-strong);
+    border-radius: 999px;
+    padding: 8px 16px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--fg);
+    cursor: pointer;
+    transition: all var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-family: inherit;
+  }
+
+  .btn-quote:hover {
+    background: var(--surface-hover);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* ========== 空状态 ========== */
+  .empty-state {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 80px 24px;
+    color: var(--fg-muted);
+    text-align: center;
+  }
+
+  .empty-icon { font-size: 48px; opacity: 0.25; }
+  .empty-state p { font-size: 15px; font-weight: 500; }
+  .empty-state small { font-size: 13px; color: var(--fg-subtle); }
+
+  /* ========== Toast 提示 ========== */
+  .toast {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: rgba(30,30,30,0.95);
+    border: 1px solid var(--border-strong);
+    border-radius: 999px;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--fg);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 300;
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    backdrop-filter: blur(12px);
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast-icon { font-size: 16px; }
+
+  /* ========== 动画 ========== */
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .venue-card.removing {
+    animation: fadeOut 0.25s ease-in forwards;
+  }
+
+  @keyframes fadeOut {
+    to { opacity: 0; transform: translateY(-8px) scale(0.97); }
+  }
+</style>
+</head>
+<body>
+
+<!-- 页面顶部标题栏 -->
+<div class="page-header">
+  <div class="page-header-left">
+    <h1 class="page-title">场地库</h1>
+    <span class="page-count" id="totalCount">共 0 个场地</span>
+  </div>
+  <button class="btn-add-header" onclick="document.getElementById('v-name').focus()">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>
+    添加场地
+  </button>
+</div>
+
+<div class="app">
+
+  <!-- 左侧：添加表单 -->
+  <div class="card form-panel">
+    <div class="form-header">
+      <h2>新增场地</h2>
+      <span class="form-badge">场地库</span>
+    </div>
+    <div class="form-body">
+      <div class="field">
+        <label>场地名称</label>
+        <input type="text" id="v-name" placeholder="如：锈迹艺术中心">
+      </div>
+      <div class="field">
+        <label>地址</label>
+        <input type="text" id="v-addr" placeholder="如：朝阳区798艺术区">
+      </div>
+      <div class="field">
+        <label>适合风格</label>
+        <input type="text" id="v-style" placeholder="如：赛博朋克, 工业风（逗号分隔）">
+      </div>
+      <div class="field">
+        <label>联系方式</label>
+        <input type="text" id="v-contact" placeholder="如：138-0000-0000">
+      </div>
+      <div class="field">
+        <label>备注</label>
+        <textarea id="v-note" placeholder="开放时间、停车位、场地限制等..."></textarea>
+      </div>
+      <button class="btn-primary" onclick="addVenue()">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="currentColor"><path d="M7.5 1a.75.75 0 0 1 .75.75v5.5h5.5a.75.75 0 0 1 0 1.5h-5.5v5.5a.75.75 0 0 1-1.5 0v-5.5h-5.5a.75.75 0 0 1 0-1.5h5.5v-5.5A.75.75 0 0 1 7.5 1z"/></svg>
+        添加场地
+      </button>
+    </div>
+  </div>
+
+  <!-- 右侧：场地列表 -->
+  <div class="card list-panel">
+    <div class="venue-list" id="venueList">
+      <div class="empty-state">
+        <div class="empty-icon">&#x1F3DB;</div>
+        <p>暂无场地记录</p>
+        <small>在左侧表单添加你的第一个拍摄场地</small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">
+  <span class="toast-icon">&#x2713;</span>
+  <span id="toastMsg">已保存</span>
+</div>
+
+<script>
+const venues = JSON.parse(localStorage.getItem('venues') || '[]');
+
+function init() { renderVenues(); }
+
+function addVenue() {
+  const name    = document.getElementById('v-name').value.trim();
+  const addr    = document.getElementById('v-addr').value.trim();
+  const style   = document.getElementById('v-style').value.trim();
+  const contact = document.getElementById('v-contact').value.trim();
+  const note    = document.getElementById('v-note').value.trim();
+  if (!name) { showToast('请输入场地名称'); return; }
+
+  venues.unshift({ id: Date.now(), name, addr, style, contact, note });
+  save();
+  renderVenues();
+  showToast(`「${name}」已添加 ✨`);
+}
+
+function deleteVenue(id, name) {
+  /* 播放移除动画 */
+  const card = document.querySelector(`.venue-card[data-id="${id}"]`);
+  if (card) {
+    card.classList.add('removing');
+    setTimeout(() => {
+      const idx = venues.findIndex(v => v.id === id);
+      if (idx > -1) venues.splice(idx, 1);
+      save();
+      renderVenues();
+      showToast(`「${name}」已删除`);
+    }, 250);
+  } else {
+    const idx = venues.findIndex(v => v.id === id);
+    if (idx > -1) venues.splice(idx, 1);
+    save();
+    renderVenues();
+    showToast(`「${name}」已删除`);
+  }
+}
+
+function save() { localStorage.setItem('venues', JSON.stringify(venues)); }
+
+function renderVenues() {
+  const list = document.getElementById('venueList');
+  document.getElementById('totalCount').textContent = `共 ${venues.length} 个场地`;
+
+  if (!venues.length) {
+    list.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">&#x1F3DB;</div>
+        <p>暂无场地记录</p>
+        <small>在左侧表单添加你的第一个拍摄场地</small>
+      </div>`;
+    return;
+  }
+
+  list.innerHTML = venues.map(v => {
+    const tags = v.style ? v.style.split(/[,，]/).filter(Boolean) : [];
+    return `
+      <div class="venue-card" data-id="${v.id}">
+        <div class="venue-card-bar"></div>
+        <div class="venue-card-body">
+          <div class="venue-top">
+            <div class="venue-name">${v.name}</div>
+            <button class="venue-delete" onclick="deleteVenue(${v.id},'${v.name}')">&#x2715;</button>
+          </div>
+          ${tags.length ? `<div class="venue-tags">${tags.map(t => `<span class="venue-tag">${t.trim()}</span>`).join('')}</div>` : ''}
+          <div class="venue-detail">
+            ${v.addr    ? `<div class="venue-row"><span class="icon">&#x1F4CD;</span><span>${v.addr}</span></div>` : ''}
+            ${v.contact ? `<div class="venue-row"><span class="icon">&#x1F4DE;</span><span>${v.contact}</span></div>` : ''}
+            ${v.note    ? `<div class="venue-row"><span class="icon">&#x1F4DD;</span><span>${v.note}</span></div>` : ''}
+          </div>
+        </div>
+        <div class="venue-footer">
+          <button class="btn-quote" onclick="quoteVenue('${v.name}')">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 9l3-3 3 3M5 6V3M9 9l3-3 3 3"/></svg>
+            引用到方案
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function quoteVenue(name) { showToast(`「${name}」已引用到当前方案`); }
+
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2200);
+}
+
+init();
+</script>
+</body>
+</html>

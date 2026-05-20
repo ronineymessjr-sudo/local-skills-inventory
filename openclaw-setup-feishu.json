@@ -1,0 +1,50 @@
+{
+  "task": "setup-feishu-bitable",
+  "description": "为 Photo Workflow 创建飞书多维表格",
+  "feishu_credentials": {
+    "app_id": "cli_a90a10b74af85bd9",
+    "app_secret": "k626pzEQO2adxuhZhty2If81t0BwIdzr"
+  },
+  "tables": [
+    {
+      "name": "拍摄日程",
+      "fields": [
+        { "name": "主题", "type": "text" },
+        { "name": "日期", "type": "date" },
+        { "name": "时间", "type": "text" },
+        { "name": "地点", "type": "text" },
+        { "name": "状态", "type": "select", "options": ["待拍摄", "已完成", "取消"] }
+      ]
+    },
+    {
+      "name": "场地库",
+      "fields": [
+        { "name": "场地名称", "type": "text" },
+        { "name": "地址", "type": "text" },
+        { "name": "类型", "type": "select", "options": ["室内", "室外", "影棚"] },
+        { "name": "标签", "type": "multi_select" },
+        { "name": "备注", "type": "text" }
+      ]
+    },
+    {
+      "name": "模特库",
+      "fields": [
+        { "name": "姓名", "type": "text" },
+        { "name": "联系方式", "type": "text" },
+        { "name": "特征", "type": "text" },
+        { "name": "标签", "type": "multi_select" },
+        { "name": "备注", "type": "text" }
+      ]
+    },
+    {
+      "name": "拍摄方案",
+      "fields": [
+        { "name": "方案名称", "type": "text" },
+        { "name": "风格", "type": "text" },
+        { "name": "场景", "type": "text" },
+        { "name": "情绪", "type": "text" },
+        { "name": "创建时间", "type": "datetime" }
+      ]
+    }
+  ]
+}
